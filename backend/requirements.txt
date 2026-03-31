@@ -10,3 +10,8 @@ numpy
 easyocr
 opencv-python-headless
 torchvision
+Pillow
+nudenet
+ftfy
+regex
+tqdm

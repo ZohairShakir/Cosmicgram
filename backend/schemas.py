@@ -12,6 +12,8 @@ class PredictResponse(BaseModel):
     label_id: int                     # 0 | 1
     confidence: float                 # 0–100 percentage
     trigger_phrase: Optional[str]     # longest meaningful token, or None
-    is_hateful: bool                  # convenience flag
+    is_hateful: bool                  # global safety flag (aggregated)
     text_preview: str                 # first 80 chars of input
     image_text: Optional[str] = None  # extracted text from image if any
+    visual_flags: Optional[list[str]] = [] # list of image content flags (NSFW, Violence, etc.)
+    is_visual_unsafe: bool = False    # true if image content itself is unsafe

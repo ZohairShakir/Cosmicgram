@@ -198,11 +198,21 @@ const CreatePost = () => {
                 </div>
                 <h3 className="text-xl font-bold text-foreground">Harmful Content Detected</h3>
                 <p className="text-muted-foreground mt-2 text-sm">
-                  Our Prahari Shield has flagged your {pendingResult?.image_text ? "image text or caption" : "caption"} as potentially containing <span className="text-destructive font-semibold">Hate Speech ({pendingResult?.confidence}%)</span>.
+                  Our Prahari Shield has flagged your {pendingResult?.is_visual_unsafe ? "image content" : "text"} as potentially containing <span className="text-destructive font-semibold">Harmful Content ({pendingResult?.confidence}%)</span>.
                 </p>
                 {pendingResult?.image_text && (
                   <div className="mt-2 p-2 bg-destructive/5 rounded text-[10px] italic border border-destructive/10">
-                    "Detected in image: {pendingResult.image_text}"
+                    "Text in image: {pendingResult.image_text}"
+                  </div>
+                )}
+                {pendingResult?.visual_flags && pendingResult.visual_flags.length > 0 && (
+                  <div className="mt-2 space-y-1 w-full">
+                    {pendingResult.visual_flags.map((flag, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-[10px] text-destructive bg-destructive/5 px-2 py-1 rounded border border-destructive/10">
+                        <ShieldAlert className="h-3 w-3" />
+                        <span>{flag}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
                 

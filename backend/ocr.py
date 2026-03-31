@@ -45,8 +45,19 @@ class OCRService:
                 logger.error("Failed to decode image from base64.")
                 return ""
 
+            # --- OPTIMIZATION: Resize & Grayscale for Speed ---
+            h, w = img.shape[:2]
+            max_dim = 800
+            if max(h, w) > max_dim:
+                scale = max_dim / max(h, w)
+                img = cv2.resize(img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+                logger.info(f"Optimized OCR: Resized from {w}x{h} to {img.shape[1]}x{img.shape[0]}")
+
+            # Grayscale can help EasyOCR speed in some cases
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
             # Run OCR
-            results = self.reader.readtext(img)
+            results = self.reader.readtext(gray)
             
             # results is a list of tuples: (bbox, text, confidence)
             # We filter for confidence and length
@@ -56,7 +67,7 @@ class OCRService:
                     extracted_tokens.append(text.strip())
 
             full_text = " ".join(extracted_tokens)
-            logger.info(f"Extracted OCR text: {full_text[:100]}...")
+            logger.info(f"Extracted OCR text (Optimized): {full_text[:100]}...")
             return full_text
 
         except Exception as e:

@@ -6,6 +6,8 @@ export interface ClassifyResult {
   is_hateful: boolean;
   text_preview: string;
   image_text?: string | null;
+  visual_flags?: string[];
+  is_visual_unsafe?: boolean;
 }
 
 export const classifyText = async (text: string, image?: string | null): Promise<ClassifyResult> => {
