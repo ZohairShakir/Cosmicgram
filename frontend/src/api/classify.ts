@@ -12,6 +12,9 @@ export interface ClassifyResult {
 }
 
 export const classifyText = async (text: string, image?: string | null): Promise<ClassifyResult> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+
   try {
     const res = await fetch("http://localhost:8000/classify", {
       method: "POST",
@@ -22,20 +25,29 @@ export const classifyText = async (text: string, image?: string | null): Promise
         text,
         image_base64: image
       }),
+      signal: controller.signal,
     });
     
+    clearTimeout(timeoutId);
+    
     if (!res.ok) {
-      throw new Error("Failed to classify text");
+      throw new Error(`Server returned ${res.status}`);
     }
     
     return await res.json();
-  } catch (err) {
-    console.error("Classification error, falling back to safe:", err);
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      console.warn("Classification timed out after 20s. Falling back to safe.");
+    } else {
+      console.error("Classification error, falling back to safe:", err);
+    }
+    
     return {
       label: "Not Hateful",
       label_id: 0,
       confidence: 100,
       is_hateful: false,
+      is_ai_generated: false,
       text_preview: text.slice(0, 80),
     };
   }

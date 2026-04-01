@@ -76,7 +76,7 @@ def get_stats():
 async def classify_endpoint(request: PredictRequest):
     """
     Classifies content using a High-Parallel Multi-Modal Architecture.
-    OCR, Visual Moderation, and AI Detection now run in parallel.
+    Compatible with Python 3.8+ using loop.run_in_executor.
     """
     if not model_loaded:
         logger.error("Classification attempted but model is not loaded.")
@@ -85,37 +85,52 @@ async def classify_endpoint(request: PredictRequest):
             detail="The Prahari MuRIL model is currently offline. Please check logs."
         )
 
+    # Image Modality Initial States
+    image_text = ""
+    visual_results = {"is_unsafe": False, "flags": [], "confidence": 0.0}
+    is_ai_generated = False
+    
+    loop = asyncio.get_event_loop()
+    
     # 1. Parallel Image Execution
-    # By running these in 'asyncio.to_thread', we avoid blocking the event loop.
     if request.image_base64:
-        logger.info("⚡ Starting Parallel Image Analysis (OCR + Visual + AI Detector)...")
+        logger.info("⚡ [API] Starting Multi-Modal Vision Analysis (OCR + Visual + AI Detection)...")
         
-        # Dispatch all vision-based models simultaneously
-        tasks = [
-            asyncio.to_thread(ocr_service.extract_text_from_base64, request.image_base64),
-            asyncio.to_thread(visual_moderator.analyze_image_base64, request.image_base64),
-            asyncio.to_thread(ai_detector.detect_ai_image, request.image_base64)
-        ]
-        
-        # Await results in batch
-        image_text, visual_results, is_ai_generated = await asyncio.gather(*tasks)
-        
-        if image_text: stats_db["ocr_extractions"] += 1
-        if visual_results["is_unsafe"]: stats_db["visual_flags"] += 1
+        # Dispatch model tasks to the executor pool (compatible with Python 3.8+)
+        try:
+            tasks = [
+                loop.run_in_executor(None, ocr_service.extract_text_from_base64, request.image_base64),
+                loop.run_in_executor(None, visual_moderator.analyze_image_base64, request.image_base64),
+                loop.run_in_executor(None, ai_detector.detect_ai_image, request.image_base64)
+            ]
+            
+            # Await vision results
+            image_text, visual_results, is_ai_generated = await asyncio.gather(*tasks)
+            
+            # Post-analysis logging
+            logger.info(f"✅ [API] Vision complete. OCR length={len(image_text)}, Unsafe={visual_results['is_unsafe']}, AI={is_ai_generated}")
+            
+            if image_text: stats_db["ocr_extractions"] += 1
+            if visual_results["is_unsafe"]: stats_db["visual_flags"] += 1
+            
+        except Exception as e:
+            logger.error(f"❌ [API] Vision tasks failed: {e}")
+            # Non-fatal: keep going with safe defaults
 
     # 2. Decision Logic: Classify Text Sources Independently
     caption_text = request.text.strip()
     
     try:
-        # Offload textual AI checks to threads as well
         txt_tasks = []
         if caption_text:
-            txt_tasks.append(asyncio.to_thread(classify_text, caption_text))
+            logger.info("📝 [API] Starting Caption analysis...")
+            txt_tasks.append(loop.run_in_executor(None, classify_text, caption_text))
         else:
             txt_tasks.append(asyncio.sleep(0, result={"is_hateful": False, "label": "Not Hateful", "confidence": 0.0}))
 
         if image_text:
-            txt_tasks.append(asyncio.to_thread(classify_text, image_text))
+            logger.info("🔍 [API] Starting OCR-Text analysis...")
+            txt_tasks.append(loop.run_in_executor(None, classify_text, image_text))
         else:
             txt_tasks.append(asyncio.sleep(0, result={"is_hateful": False, "label": "Not Hateful", "confidence": 0.0}))
 
@@ -151,17 +166,18 @@ async def classify_endpoint(request: PredictRequest):
             "is_ai_generated": is_ai_generated
         }
         
-        # Update stats
+        # Update session stats
         stats_db["total_classified"] += 1
         if global_unsafe:
             stats_db["hateful_flags"] += 1
         else:
             stats_db["safe_flags"] += 1
             
+        logger.info(f"✨ [API] Response complete: {final_response['label']} ({final_response['confidence']}%)")
         return PredictResponse(**final_response)
         
     except Exception as e:
-        logger.error(f"Error during classification: {e}")
+        logger.error(f"💀 [API] Critical failure in final aggregation: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
