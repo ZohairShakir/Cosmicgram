@@ -8,6 +8,7 @@ export interface ClassifyResult {
   image_text?: string | null;
   visual_flags?: string[];
   is_visual_unsafe?: boolean;
+  is_ai_generated?: boolean;
 }
 
 export const classifyText = async (text: string, image?: string | null): Promise<ClassifyResult> => {

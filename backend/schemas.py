@@ -17,3 +17,4 @@ class PredictResponse(BaseModel):
     image_text: Optional[str] = None  # extracted text from image if any
     visual_flags: Optional[list[str]] = [] # list of image content flags (NSFW, Violence, etc.)
     is_visual_unsafe: bool = False    # true if image content itself is unsafe
+    is_ai_generated: bool = False    # true if image was artificially generated

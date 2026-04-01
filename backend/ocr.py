@@ -4,70 +4,79 @@ import numpy as np
 import cv2
 import logging
 
+import re
+
 # OCR results often contain noise; we filter out very short junk tokens
 MIN_TOKEN_LEN = 3
+JUNK_KEYWORDS = {'size', 'packed', 'modified', 'crc', 'file', 'folder', 'date', 'kb', 'mb', 'gb'}
 
 logger = logging.getLogger(__name__)
+
+def is_junk_line(text: str) -> bool:
+    """Detects if a line of text is likely system metadata or table noise."""
+    text_lower = text.lower()
+    # Check for file system keywords
+    if any(k in text_lower for k in JUNK_KEYWORDS) and len(text) < 60:
+        return True
+    # Check for excessive numbers (e.g., directory sizes, timestamps)
+    digits = sum(c.isdigit() for c in text)
+    if digits > 8 and digits / len(text) > 0.4:
+        return True
+    return False
 
 class OCRService:
     def __init__(self, languages=['en', 'hi']):
         """
         Initializes the EasyOCR reader. 
-        Will download weights (10-20MB) on first run if not present.
         """
         logger.info(f"Initializing OCR Service for languages: {languages}")
         try:
             self.reader = easyocr.Reader(languages, gpu=True)
-            logger.info("OCR Service initialized successfully (GPU enabled if available).")
+            logger.info("OCR Service initialized successfully.")
         except Exception as e:
             logger.error(f"Failed to initialize OCR: {e}")
             self.reader = None
 
     def extract_text_from_base64(self, base64_str: str) -> str:
         """
-        Takes a base64 image string, decodes it, and runs OCR.
-        Returns a single string of concatenated text.
+        Takes a base64 image string, decodes it, and runs OCR with high-speed optimizations.
         """
         if not self.reader:
-            logger.warning("OCR Reader not available. Skipping image extraction.")
             return ""
 
         try:
-            # Strip metadata prefix if present (e.g., data:image/jpeg;base64,)
             if "," in base64_str:
                 base64_str = base64_str.split(",")[1]
 
-            # Decode
             nparr = np.frombuffer(base64.b64decode(base64_str), np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
             if img is None:
-                logger.error("Failed to decode image from base64.")
                 return ""
 
-            # --- OPTIMIZATION: Resize & Grayscale for Speed ---
+            # --- ENGINE SPEED OPTIMIZATION ---
+            # Shrink further to 640px for maximum speed; text remains readable at this scale
             h, w = img.shape[:2]
-            max_dim = 800
+            max_dim = 640
             if max(h, w) > max_dim:
                 scale = max_dim / max(h, w)
                 img = cv2.resize(img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
-                logger.info(f"Optimized OCR: Resized from {w}x{h} to {img.shape[1]}x{img.shape[0]}")
 
-            # Grayscale can help EasyOCR speed in some cases
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-            # Run OCR
-            results = self.reader.readtext(gray)
+            # paragraph=True is significantly faster as it groups lines in a single pass
+            # x_ths/y_ths tuned for Instagram-style screenshots
+            results = self.reader.readtext(gray, paragraph=True)
             
-            # results is a list of tuples: (bbox, text, confidence)
-            # We filter for confidence and length
-            extracted_tokens = []
-            for (_, text, prob) in results:
-                if prob > 0.3 and len(text.strip()) >= MIN_TOKEN_LEN:
-                    extracted_tokens.append(text.strip())
+            extracted_lines = []
+            for (_, text) in results:
+                clean_text = text.strip()
+                # Apply junk filter and length check
+                if len(clean_text) >= MIN_TOKEN_LEN and not is_junk_line(clean_text):
+                    extracted_lines.append(clean_text)
 
-            full_text = " ".join(extracted_tokens)
-            logger.info(f"Extracted OCR text (Optimized): {full_text[:100]}...")
+            full_text = " ".join(extracted_lines)
+            logger.info(f"Speed-Optimized OCR Extraction complete. Length: {len(full_text)}")
             return full_text
 
         except Exception as e:

@@ -1,0 +1,31 @@
+# AI Models (Large Binaries)
+hatescan_model/
+image_model/
+aimodel/
+model/
+*.bin
+*.pt
+*.safetensors
+*.onnx
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# IDEs
+.vscode/
+.idea/
+
+# Environment
+.env
+.venv/
+env/
+venv/
+
+# Build and Temp
+dist/
+build/
+tmp/
+*.log
+test_ai_benchmark_image_*.png

@@ -9,7 +9,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Model configuration
-MODEL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "hatescan_model"))
+LOCAL_MODEL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "hatescan_model"))
+RAILWAY_MODEL_DIR = "/app/models/hatescan_model"
+MODEL_DIR = RAILWAY_MODEL_DIR if os.path.exists(RAILWAY_MODEL_DIR) else LOCAL_MODEL_DIR
 LABELS = {0: "Not Hateful", 1: "Hateful"}
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

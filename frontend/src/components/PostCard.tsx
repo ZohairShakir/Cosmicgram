@@ -103,6 +103,12 @@ const PostCard = ({ post }: { post: Post }) => {
               <span>Safe</span>
             </div>
           )}
+          {post.isAiGenerated && (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-xs border border-amber-500/20">
+              <AlertTriangle className="h-3 w-3" />
+              <span>AI Generated</span>
+            </div>
+          )}
           <button className="text-muted-foreground hover:text-foreground p-1 transition-colors">
             <MoreHorizontal className="h-5 w-5" />
           </button>

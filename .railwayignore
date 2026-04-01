@@ -1,0 +1,10 @@
+hatescan_model/
+image_model/
+model/
+aimodel/
+frontend/
+node_modules/
+__pycache__/
+*.bin
+*.pt
+*.safetensors

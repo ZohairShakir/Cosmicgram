@@ -12,6 +12,7 @@ opencv-python-headless
 torchvision
 Pillow
 nudenet
+gdown
 ftfy
 regex
 tqdm

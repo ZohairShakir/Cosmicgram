@@ -65,6 +65,7 @@ const CreatePost = () => {
       aiSafe: !result.is_hateful,
       aiLabel: result.label as any,
       aiConfidence: result.confidence,
+      isAiGenerated: result.is_ai_generated,
     });
     navigate("/");
   };
@@ -174,9 +175,20 @@ const CreatePost = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2 py-3 border-t border-border text-xs text-muted-foreground">
-              <Shield className="h-4 w-4 text-primary" />
-              <span>This post will be scanned by our AI for offensive content, hate speech, and targeted harassment before publishing.</span>
+            <div className="flex flex-col gap-3 py-3 border-t border-border">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Shield className="h-4 w-4 text-primary" />
+                <span>This post will be scanned by our AI for offensive content, hate speech, and targeted harassment.</span>
+              </div>
+              <div className="flex items-center justify-between px-3 py-2 bg-amber-500/5 rounded-lg border border-amber-500/10">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className={`h-4 w-4 transition-colors ${posting ? "text-muted-foreground animate-pulse" : "text-amber-500"}`} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">AI Source Recognition</span>
+                </div>
+                <span className="text-[9px] text-muted-foreground italic">
+                  {posting ? "Analyzing Image..." : "Prahari Passive Scan Active"}
+                </span>
+              </div>
             </div>
           </div>
         )}
