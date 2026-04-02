@@ -70,41 +70,44 @@ const PostCard = ({ post }: { post: Post }) => {
     <motion.article
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-card rounded-xl shadow-card overflow-hidden mb-4 border transition-colors ${
-        post.aiLabel === 'Hateful' ? 'border-destructive/30 bg-destructive/[0.02]' : 'border-transparent'
+      whileHover={{ scale: 1.002 }}
+      className={`bg-card rounded-xl shadow-card overflow-hidden mb-4 border transition-all duration-300 ${
+        post.aiLabel === 'Hateful' ? 'border-destructive/30 bg-destructive/[0.02] shadow-destructive/5' : 'border-transparent hover:shadow-lg'
       }`}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-3">
-        <Link to={`/profile/${post.username}`} className="flex items-center gap-3">
-          <img src={post.avatar} alt={post.username} className="w-9 h-9 rounded-full object-cover border border-border" />
+        <Link to={`/profile/${post.username}`} className="flex items-center gap-3 group">
+          <div className={`${post.isVerified ? 'story-ring' : ''} p-[1.5px] transition-transform group-hover:scale-105`}>
+            <img src={post.avatar} alt={post.username} className="w-9 h-9 rounded-full object-cover border-2 border-card" />
+          </div>
           <div>
             <div className="flex items-center gap-1">
-              <span className="text-sm font-semibold">{post.username}</span>
+              <span className="text-sm font-semibold hover:text-primary transition-colors">{post.username}</span>
               {post.isVerified && <BadgeCheck className="h-4 w-4 text-primary fill-primary stroke-primary-foreground" />}
             </div>
-            {post.location && <span className="text-xs text-muted-foreground">{post.location}</span>}
+            {post.location && <span className="text-[11px] text-muted-foreground">{post.location}</span>}
           </div>
         </Link>
         <div className="flex items-center gap-2">
           {post.aiLabel === 'Hateful' ? (
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold uppercase tracking-wider border border-destructive/20 animate-pulse">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold uppercase tracking-wider border border-destructive/20 animate-pulse shadow-sm shadow-destructive/10">
               <ShieldAlert className="h-3 w-3" />
               <span>Hate Speech detected ({post.aiConfidence}%)</span>
             </div>
           ) : post.aiLabel === 'Not Hateful' ? (
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-success/10 text-success text-[10px] font-bold uppercase tracking-wider border border-success/20">
-              <ShieldCheck className="h-3 w-3" />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/10 text-success text-[10px] font-bold uppercase tracking-wider border border-success/30 shadow-sm shadow-success/10">
+              <ShieldCheck className="h-3.5 w-3.5" />
               <span>Safe Verified</span>
             </div>
           ) : post.aiSafe && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 text-success text-[10px] font-bold uppercase border border-success/10">
               <Shield className="h-3 w-3" />
               <span>Safe</span>
             </div>
           )}
           {post.isAiGenerated && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-xs border border-amber-500/20">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-bold uppercase border border-amber-500/20">
               <AlertTriangle className="h-3 w-3" />
               <span>AI Generated</span>
             </div>
