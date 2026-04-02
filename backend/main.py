@@ -56,6 +56,17 @@ stats_db = {
 }
 
 
+@app.get("/")
+def read_root():
+    """Welcome endpoint for the Prahari API."""
+    return {
+        "message": "Welcome to the Prahari Multilingual Moderation API",
+        "version": "3.0.0",
+        "docs": "/docs",
+        "status": "active"
+    }
+
+
 @app.get("/health")
 def get_health():
     """Healthcheck endpoint to verify the API and AI model state."""
